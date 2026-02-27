@@ -1,0 +1,53 @@
+// Security-Enhanced Multi-Tenant Auth Schema
+// 3 tables with proper indexes and security constraints
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model tenants {
+  id         String   @id @default(uuid())
+  name       String
+  slug       String   @unique // e.g., "tenant-a" for tenant-a.yourdomain.com
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  auth_mappings customer_auth_mappings[]
+
+  @@index([slug])
+}
+
+model users {
+  id               String   @id @default(uuid())
+  supabase_user_id String   @unique
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  auth_mappings customer_auth_mappings[]
+}
+
+model customer_auth_mappings {
+  id             String    @id @default(uuid())
+  tenant_id      String
+  user_id        String
+  real_email     String // Real email (e.g., "user@example.com")
+  internal_email String    @unique // SHA256-based internal email for Supabase
+  email_verified Boolean   @default(false)
+  last_login_at  DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  tenant tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  user   users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // SECURITY: Enforce one email per tenant (tenant isolation)
+  @@unique([tenant_id, real_email])
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([internal_email])
+}

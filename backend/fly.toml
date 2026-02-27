@@ -1,0 +1,16 @@
+# Fly.io configuration - minimal setup for free tier
+# Deploy: fly launch (follow prompts, then set secrets with fly secrets set)
+
+app = "supabase-multi-tenancy-auth"
+primary_region = "ams"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+[env]
+  PORT = "3001"
+  NODE_ENV = "production"
